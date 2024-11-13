@@ -33,7 +33,22 @@ html, body {
         opacity: 1;
     }
 }
+@keyframes fadeIn50 {
+    to {
+        opacity: 0.5;
+    }
+}
+@keyframes fadeIn25 {
+    to {
+        opacity: 0.25;
+    }
+}
 
+@keyframes fadeIn10 {
+    to {
+        opacity: 0.1;
+    }
+}
 
 #menuContainer {
     display: flex;
@@ -44,6 +59,11 @@ html, body {
     width: 100vw;
     margin: 0;
     padding: 0;
+}
+#menuContainer button:disabled {
+
+    color: var(--foreground-dimmest);
+    animation: fadeIn25 var(--transition-duration-loadin-slow) var(--transition-timing-function-loadin) !important;
 }
 #menuContainer button {
     font-size: var(--font-size-header-small);
