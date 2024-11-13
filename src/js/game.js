@@ -1,3 +1,4 @@
+
 document.querySelectorAll("#menuContainer button").forEach(button => {
     button.addEventListener("click", (event) => {
         setTimeout(switchToGame, 1000)
@@ -23,15 +24,20 @@ function setGameMode(mode){
 setGameMode(GameModes.PlayerVsPlayer)
 // switchToGame()
 
-document.querySelectorAll(".cell").forEach(cell => {
-    cell.addEventListener("click", (event) => {
-        if (!cell.parentElement.parentElement.classList.contains("active") || cell.classList.contains("marked")) {return};
-        clickedCell(parseInt(cell.id.split('-')[0].slice(4)), parseInt(cell.id.split('-')[1]));
+function addListeners(){
+
+    document.querySelectorAll(".cell").forEach(cell => {
+        cell.addEventListener("click", (event) => {
+            if (!cell.parentElement.parentElement.classList.contains("active") || cell.classList.contains("marked")) {return};
+            clickedCell(parseInt(cell.id.split('-')[0].slice(4)), parseInt(cell.id.split('-')[1]));
+        })
     })
-})
+}
+addListeners();
 
 function switchToGame(){
-    document.querySelector("#menuContainer").style.display = "none";
+    document.querySelector("#menuContainer").classList.add("hide");
+    document.querySelector("#gameContainer").classList.remove("hide");
 
     setAllBoredsActive()
 }
@@ -75,12 +81,18 @@ function checkWholeGameWin(){
     for(let i = 0; i < 3; i++){
         boardData.push([]);
         for(let j = 0; j < 3; j++){
-            boardData[i].push(document.querySelector(`#board${board}-${j + 1 + i * 3} .windisplay`).innerHTML);
+            boardData[i].push(document.querySelector(`#board${j + 1 + i * 3} .windisplay`).innerHTML);
         }
     }
     let winner = checkWin(boardData)
+    winner = "X"
     if(winner != ""){
-        alert(`${winner} wins!`);
+        document.querySelector("#gameContainer").classList.add("won");
+        document.querySelector("#gameInfo .winner").innerHTML = winner;
+        document.querySelector("#gameInfo .winner").classList.add(winner == "X" ? "markX" : "markO");
+        setTimeout(()=>{
+            document.querySelector("#gameInfo").classList.remove("hide");
+        },2500)
     }
 }
 
@@ -107,10 +119,16 @@ function setBoardActive(board){
     document.querySelector(`#board${board}`).classList.add("active");
 }
 
-let initGame = document.querySelector("gameContainer").innerHTML
+let initGame = document.querySelector("#gameContainer").innerHTML
 function resetGame(){
     
-    setTimeout(()=>{document.querySelector("gameContainer").innerHTML = initGame;document.querySelector("#menuContainer").style.display = "";},1000);
+    setTimeout(()=>{
+        document.querySelector("#gameContainer").innerHTML = initGame;
+        document.querySelector("#menuContainer").classList.remove("hide");
+        document.querySelector("#gameContainer").classList.add("hide");
+        document.querySelector("#gameContainer").classList.remove("won");
+        requestAnimationFrame(()=>{addListeners()});
+    },1000);
     let mask = document.querySelector("#mask")
     mask.classList.add("animate")
     setTimeout(() => {
