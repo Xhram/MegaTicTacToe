@@ -85,7 +85,6 @@ function checkWholeGameWin(){
         }
     }
     let winner = checkWin(boardData)
-    winner = "X"
     if(winner != ""){
         document.querySelector("#gameContainer").classList.add("won");
         document.querySelector("#gameInfo .winner").innerHTML = winner;
