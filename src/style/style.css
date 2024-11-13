@@ -1,0 +1,196 @@
+html, body {
+    font-family: var(--font-family-default);
+    background-color: var(--background-root);
+    color: var(--foreground-default);
+    overflow: hidden;
+
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+#title {
+    font-size: var(--font-size-header-big);
+    opacity: 0.1;
+
+    animation: fadeIn var(--transition-duration-loadin) var(--transition-timing-function-loadin);
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+
+#menuContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+#menuContainer button {
+    font-size: var(--font-size-header-small);
+    margin: 0.5em;
+    padding: 0.5em 1em;
+    border: var(--border-width-default) solid var(--outline-default);
+    border-radius: var(--border-radius-default);
+    background-color: var(--background-button);
+    box-shadow: var(--shadow-default);
+    color: var(--foreground-button);
+    cursor: pointer;
+    background-color: var(--background-default);
+    opacity: 0.001;
+    animation: fadeIn var(--transition-duration-loadin-slow) var(--transition-timing-function-loadin);
+    
+}
+#menuContainer button:nth-child(1){
+    animation-delay: 0.2s;
+}
+#menuContainer button:nth-child(3){
+    animation-delay: 0.4s;
+}
+#menuContainer button:hover {
+    background-color: var(--background-higher);
+}
+#menuContainer button:active {
+    background-color: var(--background-highest);
+}
+#menuContainer .gameplay-selector{
+    display: flex;
+    font-size: var(--font-size-header-small);
+    
+}
+
+#mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    
+    
+    background-position: center;
+    background: radial-gradient(circle, var(--foreground-default) 0.1%, transparent 0.12%) center/10px 10px;
+    background-size: 0;
+    
+    z-index: 1000;
+}
+#mask.animate {
+    animation: maskGrow 2s forwards;
+}
+@keyframes maskGrow {
+    0% {
+        background-size: 100vmax;
+    }
+    50% {
+        background-size: 150000vmax;
+    }
+    100% {
+        background-size: 100vmax;
+    }
+    to {
+        background-size: 0;
+    }
+}
+
+#gameContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+#game {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-template-rows: repeat(3, 1fr); /* 3 rows */
+    gap: var(--space-default); /* Adjust the gap between grid items as needed */
+    width: 100vmin;
+    height: 100vmin;
+    padding: 0px; /* Adjust padding as needed */
+    box-sizing: border-box;
+    background-color: var(--foreground-dimmer);
+    margin: 20px;
+    border-radius: 0;
+}
+
+.board {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    background-color: var(--background-root);
+    border: var(--border-width-default) solid var(--background-root);
+    border-radius: 0;
+    font-size: var(--font-size-header-small);
+    color: var(--foreground-default);
+    padding: var(--space-default);
+}
+.cellContainer {
+
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-template-rows: repeat(3, 1fr); /* 3 rows */
+    gap: var(--space-default);
+    background-color: var(--foreground-dimmest);
+    border: var(--border-width-default) solid var(--background-root);
+    border-radius: var(--border-radius-default);
+}
+.cellContainer:hover{
+    background-color: var(--foreground-dimmer);
+    
+}
+
+.board.active,.board.active .cell {
+    /* background-color: var(--background-default);
+    border-color: var(--background-default); */
+}
+.board.active .cellContainer{
+    /* border-color: var(--background-default); */
+    background-color: var(--foreground-default);
+
+}
+.board.active .cell:hover {
+    background-color: var(--background-default);
+    transition: background-color var(--transition-duration-chill) var(--transition-timing-function-chill);
+}
+.board.active .cell:active {
+    background-color: var(--background-higher);
+    transition: 0s;
+}
+.cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--background-root);
+    border: var(--border-width-default) solid var(--background-root);
+    border-radius: var(--border-radius-default);
+    font-size: var(--font-size-header-big);
+    font-weight: 800;
+    color: var(--foreground-default);
+    cursor: pointer;
+    border-radius: 0;
+
+}
+
+.markX {
+    color: var(--accent-red-default);
+}
+.markO {
+    color: var(--accent-blue-default);
+}
