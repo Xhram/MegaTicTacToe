@@ -20,9 +20,9 @@
 
             </div>
         </div>
-        <div id="gameContainer">
-            <div id="game">
-                <div class="board won" id="board1">
+        <div id="gameContainer" class="won">
+            <div id="game" >
+                <div class="board" id="board1">
                     <div class="cellContainer" id="cellContainer1">
                         <div class="cell" id="cell1-1"></div>
                         <div class="cell" id="cell1-2"></div>
@@ -36,7 +36,7 @@
                     </div>
                     <div class="windisplay"></div>
                 </div>
-                <div class="board won" id="board2">
+                <div class="board" id="board2">
                     <div class="cellContainer" id="cellContainer2">
                         <div class="cell" id="cell2-1"></div>
                         <div class="cell" id="cell2-2"></div>
@@ -147,6 +147,15 @@
                         <div class="cell" id="cell9-9"></div>
                     </div>
                     <div class="windisplay"></div>
+                </div>
+            </div>
+            <div id="gameInfo">
+                <div>
+                    <span class="winner markX">X</span> Has Won!
+
+                </div>
+                <div class="container">
+                    <button onclick="resetGame()">Back To Menu</button>
                 </div>
             </div>
         </div>

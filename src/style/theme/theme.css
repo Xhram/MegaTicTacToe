@@ -57,6 +57,7 @@
     --transition-timing-function-chill: ease-in-out;
     --transition-duration-loadin: 1500ms;
     --transition-duration-loadin-slow: 2500ms;
+    --transition-duration-loadin-slowest: 4000ms;
     --transition-timing-function-loadin: forwards;
     --border-width-default: 1px;
     --single-line: 1;

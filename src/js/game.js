@@ -21,7 +21,7 @@ function setGameMode(mode){
 
 
 setGameMode(GameModes.PlayerVsPlayer)
-switchToGame()
+// switchToGame()
 
 document.querySelectorAll(".cell").forEach(cell => {
     cell.addEventListener("click", (event) => {
@@ -59,12 +59,32 @@ function clickedCell(board, cell){
     let winner = checkWin(boardData)
     if(winner != ""){
         document.querySelector(`#board${board}`).classList.remove("active");
-        document.querySelector(`#board${board}`).classList.add("won");
+        document.querySelector(`#board${board}`).classList.add("won", winner == "X" ? "markX" : "markO");
         document.querySelector(`#board${board} .windisplay`).innerHTML = winner;
-
+        checkWholeGameWin()
     }
-    setBoardActive(cell);
+    if(document.querySelector(`#board${cell}`).classList.contains("won")){
+        setAllBoredsActive();
+    } else {
+        setBoardActive(cell);
+    }
+
 }
+function checkWholeGameWin(){
+    let boardData = [];
+    for(let i = 0; i < 3; i++){
+        boardData.push([]);
+        for(let j = 0; j < 3; j++){
+            boardData[i].push(document.querySelector(`#board${board}-${j + 1 + i * 3} .windisplay`).innerHTML);
+        }
+    }
+    let winner = checkWin(boardData)
+    if(winner != ""){
+        alert(`${winner} wins!`);
+    }
+}
+
+
 
 function removeMarkedLastHighLight(){
     document.querySelectorAll(".marked").forEach(cell => {
@@ -79,9 +99,21 @@ function removeActive(){
 }
 function setAllBoredsActive(){
     document.querySelectorAll(".board").forEach(board => {
+        if(board.classList.contains("won")){return}
         board.classList.add("active");
     })
 }
 function setBoardActive(board){
     document.querySelector(`#board${board}`).classList.add("active");
+}
+
+let initGame = document.querySelector("gameContainer").innerHTML
+function resetGame(){
+    
+    setTimeout(()=>{document.querySelector("gameContainer").innerHTML = initGame;document.querySelector("#menuContainer").style.display = "";},1000);
+    let mask = document.querySelector("#mask")
+    mask.classList.add("animate")
+    setTimeout(() => {
+        mask.classList.remove("animate")
+    }, 2000)
 }
