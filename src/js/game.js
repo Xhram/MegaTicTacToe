@@ -49,6 +49,20 @@ function clickedCell(board, cell){
         document.querySelector(`#cell${board}-${cell}`).innerHTML = "O";
         turn = Turns.Player1;
     }
+    let boardData = [];
+    for(let i = 0; i < 3; i++){
+        boardData.push([]);
+        for(let j = 0; j < 3; j++){
+            boardData[i].push(document.querySelector(`#cell${board}-${j + 1 + i * 3}`).innerHTML);
+        }
+    }
+    let winner = checkWin(boardData)
+    if(winner != ""){
+        document.querySelector(`#board${board}`).classList.remove("active");
+        document.querySelector(`#board${board}`).classList.add("won");
+        document.querySelector(`#board${board} .windisplay`).innerHTML = winner;
+
+    }
     setBoardActive(cell);
 }
 

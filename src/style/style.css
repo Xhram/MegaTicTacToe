@@ -115,12 +115,12 @@ html, body {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 3 columns */
     grid-template-rows: repeat(3, 1fr); /* 3 rows */
-    gap: var(--space-default); /* Adjust the gap between grid items as needed */
+    gap: var(--space-4); /* Adjust the gap between grid items as needed */
     width: 100vmin;
     height: 100vmin;
     padding: 0px; /* Adjust padding as needed */
     box-sizing: border-box;
-    background-color: var(--foreground-dimmer);
+    background-color: var(--foreground-default);
     margin: 20px;
     border-radius: 0;
 }
@@ -130,6 +130,7 @@ html, body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    position: relative;
 
     background-color: var(--background-root);
     border: var(--border-width-default) solid var(--background-root);
@@ -145,7 +146,7 @@ html, body {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 3 columns */
     grid-template-rows: repeat(3, 1fr); /* 3 rows */
-    gap: var(--space-default);
+    gap: var(--space-2);
     background-color: var(--foreground-dimmest);
     border: var(--border-width-default) solid var(--background-root);
     border-radius: var(--border-radius-default);
@@ -162,6 +163,8 @@ html, body {
 .board.active .cellContainer{
     /* border-color: var(--background-default); */
     background-color: var(--foreground-default);
+    gap: var(--space-default);
+
 
 }
 .board.active .cell:hover {
@@ -193,4 +196,47 @@ html, body {
 }
 .markO {
     color: var(--accent-blue-default);
+}
+
+.board.won .cellContainer {
+    opacity: 1;
+    animation: fadeOut10 var(--transition-duration-loadin-slow) var(--transition-timing-function-loadin);
+}
+.board .windisplay {
+    display: none;
+}
+.board.won .windisplay{
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 12rem;
+    opacity: 0.01;
+    animation: fadeIn var(--transition-duration-loadin-slow) var(--transition-timing-function-loadin);
+
+}
+@keyframes fadeOut50 {
+    to {
+        opacity: 0.5;
+    }
+}
+@keyframes fadeOut25 {
+    to {
+        opacity: 0.25;
+    }
+}
+@keyframes fadeOut10 {
+    to {
+        opacity: 0.1;
+    }
+}
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+    }
+}
+
+.board.won {
+    pointer-events: none;
 }
