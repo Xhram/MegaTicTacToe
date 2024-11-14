@@ -14,9 +14,9 @@
 
             </div>
             <div class="gameplay-selector">
-                <button onclick="setGameMode(GameModes.PlayerVsPlayer)">Play V.S</button>
+                <button>Play New</button>
                 <p>or</p>
-                <button onclick="setGameMode(GameModes.PlayerVsComputer)" disabled>Play AI</button>
+                <button onclick="loadGame()" disabled>Load Game</button>
 
             </div>
             <div id="credits">
@@ -164,6 +164,7 @@
                 </div>
             </div>
         </div>
+        <script src="js/gameSave.js"></script>
         <script src="js/animate.js"></script>
         <script src="js/game.js"></script>
         <script src="js/winCheck.js"></script>

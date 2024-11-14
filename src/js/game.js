@@ -5,10 +5,7 @@ document.querySelectorAll("#menuContainer button").forEach(button => {
         
     })
 });
-let GameModes = {
-    PlayerVsPlayer: 1,
-    PlayerVsComputer: 2,
-}
+
 let Turns = {
     Player1: 1,
     Player2: 2,
@@ -16,12 +13,8 @@ let Turns = {
 let turn = Turns.Player1;
 let gameMode;
 
-function setGameMode(mode){
-    gameMode = mode;
-}
 
 
-setGameMode(GameModes.PlayerVsPlayer)
 // switchToGame()
 
 function addListeners(){
@@ -74,6 +67,7 @@ function clickedCell(board, cell){
     } else {
         setBoardActive(cell);
     }
+    saveGame();
 
 }
 function checkWholeGameWin(){
@@ -120,7 +114,7 @@ function setBoardActive(board){
 
 let initGame = document.querySelector("#gameContainer").innerHTML
 function resetGame(){
-    
+    deleteGame();
     setTimeout(()=>{
         document.querySelector("#gameContainer").innerHTML = initGame;
         document.querySelector("#menuContainer").classList.remove("hide");
