@@ -22,4 +22,4 @@ Mega Tic Tac Toe, also known as Super Tic Tac Toe, is an advanced version of the
 
 Enjoy the challenge and have fun playing Mega Tic Tac Toe!
 
-[Play Mega Tic Tac Toe](https://xhram.github.io/megatictactoe)
+[Play Mega Tic Tac Toe](https://xhram.github.io/MegaTicTacToe/)
