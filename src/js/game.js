@@ -78,10 +78,11 @@ function checkWholeGameWin(){
         document.querySelector("#gameInfo .winner").classList.add(winner == "X" ? "markX" : "markO");
         setTimeout(()=>{
             document.querySelector("#gameInfo").classList.remove("hide");
+            document.querySelector("#game").classList.add("hide");
         },2500)
+        deleteGame();
     }
 }
-
 
 
 function removeMarkedLastHighLight(){
