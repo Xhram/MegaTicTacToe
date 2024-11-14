@@ -14,9 +14,9 @@
 
             </div>
             <div class="gameplay-selector">
-                <button>Play New</button>
+                <button onclick="setTimeout(switchToGame, 1000)">Play New</button>
                 <p>or</p>
-                <button onclick="loadGame()" disabled>Load Game</button>
+                <button onclick="loadGame();setTimeout(()=>{document.querySelector(`#menuContainer`).classList.add(`hide`);document.querySelector(`#gameContainer`).classList.remove(`hide`);}, 1000)" disabled>Load Game</button>
 
             </div>
             <div id="credits">

@@ -1,17 +1,10 @@
 
-document.querySelectorAll("#menuContainer button").forEach(button => {
-    button.addEventListener("click", (event) => {
-        setTimeout(switchToGame, 1000)
-        
-    })
-});
 
 let Turns = {
     Player1: 1,
     Player2: 2,
 }
 let turn = Turns.Player1;
-let gameMode;
 
 
 
