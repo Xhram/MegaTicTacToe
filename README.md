@@ -1,4 +1,5 @@
 # MegaTicTacToe
+[Play Mega Tic Tac Toe](https://xhram.github.io/MegaTicTacToe/index.html)
 
 ## How to Play Mega Tic Tac Toe
 
@@ -21,5 +22,3 @@ Mega Tic Tac Toe, also known as Super Tic Tac Toe, is an advanced version of the
 8. **Strategy**: Players must think ahead and plan their moves carefully, as each move determines the next board for the opponent.
 
 Enjoy the challenge and have fun playing Mega Tic Tac Toe!
-
-[Play Mega Tic Tac Toe](https://xhram.github.io/MegaTicTacToe/)
