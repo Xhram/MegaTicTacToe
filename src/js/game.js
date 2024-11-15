@@ -14,7 +14,8 @@ function addListeners(){
 
     document.querySelectorAll(".cell").forEach(cell => {
         cell.addEventListener("click", (event) => {
-            if (!cell.parentElement.parentElement.classList.contains("active") || cell.classList.contains("marked")) {return};
+            let full = isBoredFull(parseInt(cell.id.split('-')[0].slice(4)));
+            if (!cell.parentElement.parentElement.classList.contains("active") || (cell.classList.contains("marked") && !full)) {return};
             clickedCell(parseInt(cell.id.split('-')[0].slice(4)), parseInt(cell.id.split('-')[1]));
         })
     })
@@ -65,13 +66,23 @@ function clickedCell(board, cell){
 }
 function checkWholeGameWin(){
     let boardData = [];
+    let x = 0;
+    let o = 0;
     for(let i = 0; i < 3; i++){
         boardData.push([]);
         for(let j = 0; j < 3; j++){
             boardData[i].push(document.querySelector(`#board${j + 1 + i * 3} .windisplay`).innerHTML);
+            boardData[i][j] == "X" ? x++ : boardData[i][j] == "O" ? o++ : null;
         }
     }
     let winner = checkWin(boardData)
+    if(x + o == 9){
+        if(x>o){
+            winner = "X"
+        } else if(o>x){
+            winner = "O"
+        }
+    }
     if(winner != ""){
         document.querySelector("#gameContainer").classList.add("won");
         document.querySelector("#gameInfo .winner").innerHTML = winner;
@@ -121,4 +132,13 @@ function resetGame(){
     setTimeout(() => {
         mask.classList.remove("animate")
     }, 2000)
+}
+function isBoredFull(board){
+    let full = true;
+    for(let i = 1; i <= 9; i++){
+        if(document.querySelector(`#cell${board}-${i}`).innerHTML == ""){
+            full = false;
+        }
+    }
+    return full;
 }
