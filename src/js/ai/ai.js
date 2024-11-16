@@ -15,20 +15,34 @@ function findBestMoves(gameState, depth) {
     let bestMoves = [];
 
     const possibleMoves = getPossibleMoves(gameState);
+    const numWorkers = navigator.hardwareConcurrency || 4; // Use the number of logical processors or default to 4
+    const workers = [];
+    let completed = 0;
 
-    for (const move of possibleMoves) {
-        makeMove(gameState, move, player);
-        const moveValue = minimax(gameState, depth - 1, false, -Infinity, Infinity, player, opponent);
-        undoMove(gameState, move);
-        if (moveValue > bestValue) {
-            bestValue = moveValue;
-            bestMoves = [move];
-        } else if (moveValue === bestValue) {
-            bestMoves.push(move);
-        }
-    }
+    return new Promise((resolve) => {
+        possibleMoves.forEach((move, index) => {
+            const worker = new Worker('src/js/ai/aiWorker.js');
+            workers.push(worker);
 
-    return bestMoves;
+            worker.onmessage = function(event) {
+                const { move, moveValue } = event.data;
+                if (moveValue > bestValue) {
+                    bestValue = moveValue;
+                    bestMoves = [move];
+                } else if (moveValue === bestValue) {
+                    bestMoves.push(move);
+                }
+
+                completed++;
+                if (completed === possibleMoves.length) {
+                    workers.forEach(worker => worker.terminate());
+                    resolve(bestMoves);
+                }
+            };
+
+            worker.postMessage({ gameState: cloneGameState(gameState), move, depth, player, opponent });
+        });
+    });
 }
 
 function minimax(gameState, depth, isMaximizing, alpha, beta, player, opponent) {

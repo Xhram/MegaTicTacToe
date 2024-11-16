@@ -1,29 +1,29 @@
 function runAI(depth) {
     const gameState = gameStateToJSON(); // Get the current game state
-    const bestMoves = findBestMoves(gameState, depth);
+    findBestMoves(gameState, depth).then(bestMoves => {
+        if (bestMoves.length > 0) {
+            const move = bestMoves[0]; // Select the first best move
+            console.log('Best Moves:', bestMoves);
+            console.log(`AI selects board (${move.boardRow}, ${move.boardCol}) and cell (${move.cellRow}, ${move.cellCol})`);
 
-    if (bestMoves.length > 0) {
-        const move = bestMoves[0]; // Select the first best move
-        console.log('Best Moves:', bestMoves);
-        console.log(`AI selects board (${move.boardRow}, ${move.boardCol}) and cell (${move.cellRow}, ${move.cellCol})`);
+            // Calculate board and cell numbers based on their positions
+            const boardNumber = move.boardRow * 3 + move.boardCol + 1;
+            const cellNumber = move.cellRow * 3 + move.cellCol + 1;
 
-        // Calculate board and cell numbers based on their positions
-        const boardNumber = move.boardRow * 3 + move.boardCol + 1;
-        const cellNumber = move.cellRow * 3 + move.cellCol + 1;
+            // Construct the cell ID as per your HTML structure
+            const cellId = `cell${boardNumber}-${cellNumber}`;
+            const cellElement = document.getElementById(cellId);
 
-        // Construct the cell ID as per your HTML structure
-        const cellId = `cell${boardNumber}-${cellNumber}`;
-        const cellElement = document.getElementById(cellId);
-
-        if (cellElement) {
-            // Simulate a click event on the cell
-            cellElement.click();
+            if (cellElement) {
+                // Simulate a click event on the cell
+                cellElement.click();
+            } else {
+                console.error(`Cell element with ID ${cellId} not found.`);
+            }
         } else {
-            console.error(`Cell element with ID ${cellId} not found.`);
+            console.log("No possible moves found.");
         }
-    } else {
-        console.log("No possible moves found.");
-    }
+    });
 }
 
 let aiRunning = false;
