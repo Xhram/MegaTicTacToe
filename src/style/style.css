@@ -4,8 +4,8 @@ html, body {
     color: var(--foreground-default);
     overflow: hidden;
     
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100dvw;
     margin: 0;
     padding: 0;
 }
@@ -19,15 +19,20 @@ html, body {
 
     animation: fadeIn var(--transition-duration-loadin) var(--transition-timing-function-loadin);
 }
-#credits {
+#credits , a, .cl{
     font-size: var(--font-size-small);
     opacity: 0.05;
 
     animation: fadeIn var(--transition-duration-loadin) var(--transition-timing-function-loadin);
     animation-delay: 0.6s;
     color: var(--foreground-dimmest);
+    text-decoration: underline;
+    text-decoration-color: var(--foreground-dimmest) !important;
 }
-
+a {
+    text-decoration: underline;
+    text-decoration-color: var(--foreground-dimmest) !important;
+}
 @keyframes fadeIn {
     to {
         opacity: 1;
@@ -55,8 +60,8 @@ html, body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100dvw;
     margin: 0;
     padding: 0;
 }
@@ -102,8 +107,8 @@ html, body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100dvw;
+    height: 100dvh;
     pointer-events: none;
     
     
@@ -136,8 +141,8 @@ html, body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100dvw;
     margin: 0;
     padding: 0;
 }
@@ -147,8 +152,8 @@ html, body {
     grid-template-columns: repeat(3, 1fr); /* 3 columns */
     grid-template-rows: repeat(3, 1fr); /* 3 rows */
     gap: var(--space-4); /* Adjust the gap between grid items as needed */
-    width: 100vmin;
-    height: 100vmin;
+    width: calc(min(100dvh,100dvw));
+    height: calc(min(100dvh,100dvw));
     padding: 0px; /* Adjust padding as needed */
     box-sizing: border-box;
     background-color: var(--foreground-default);
