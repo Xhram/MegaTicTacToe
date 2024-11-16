@@ -11,15 +11,18 @@ function gameStateToJSON() {
         const col = boardNumber % 3;
         const cells = board.querySelectorAll('.cell');
         const miniGrid = [[], [], []];
-        
+        let full = true;
         cells.forEach(cell => {
             const cellIndex = parseInt(cell.id.split('-')[1]) - 1;
             const cellRow = Math.floor(cellIndex / 3);
             const cellCol = cellIndex % 3;
+            if(cell.textContent.trim() === ''){
+                full = false;
+            }
             miniGrid[cellRow][cellCol] = cell.textContent.trim() || null;
         });
         
-        bigGrid[row][col] = {miniGrid, isScratch: , winner: board.classList.contains('won') ? board.querySelector('.windisplay').innerHTML : null};
+        bigGrid[row][col] = {miniGrid, isScratch: full, winner: board.classList.contains('won') ? board.querySelector('.windisplay').innerHTML : null};
     });
     let lastPlayedCell = null;
     const lastCell = document.querySelector('.cell.markX, .cell.markO');
