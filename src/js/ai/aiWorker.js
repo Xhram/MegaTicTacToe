@@ -11,11 +11,11 @@ self.addEventListener('message', function(e) {
 
     // Compute the score for the provided move
     const childState = applyMove(state, move);
+
     const score = minimax(childState, depth - 1, -Infinity, Infinity, false, weights);
 
     // Post the move and its score back to the main thread
-    self.postMessage({ move, score });
 
-    // Terminate the worker to free up resources
-    self.close();
+    self.postMessage({ move, score, totalChecked_: totalChecked, wins_: wins });
+
 });

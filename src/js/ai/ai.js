@@ -1,32 +1,40 @@
-
 let weights = {
-    win: 25,
-    lose: -500,
-    miniBoardWin: 5,
-    miniBoardLose: -20,
-    winCenterMiniBoard: 10,
-    loseCenterMiniBoard: -50,
+    win: 1000,
+    lose: -2000,
+    miniBoardWin: 100,
+    miniBoardLose: -200,
+    winCenterMiniBoard: 100,
+    loseCenterMiniBoard: -600,
 };
+let totalChecked = 0;
+let wins = 0;
+
 
 function minimax(state, depth, alpha, beta, maximizingPlayer, weights) {
     if (depth === 0 || isTerminal(state)) {
-        return evaluate(state, weights);
+        totalChecked++;
+        let eval = evaluate(state, weights);
+        if(eval > 0 ){
+            wins++;
+        }
+        return eval;
     }
 
     const moves = getPossibleMoves(state);
 
     if (maximizingPlayer) {
-        let maxEval = -Infinity;
+        let avg = 0;
+
         for (const move of moves) {
             const childState = applyMove(state, move);
             const eval = minimax(childState, depth - 1, alpha, beta, false, weights);
-            maxEval = Math.max(maxEval, eval);
+            avg += eval;
             alpha = Math.max(alpha, eval);
-            if (beta <= alpha) {
-                break; // Beta cut-off
-            }
+            // if (beta <= alpha) {
+            //     break; // Beta cut-off
+            // }
         }
-        return maxEval;
+        return avg / moves.length;
     } else {
         let minEval = Infinity;
         for (const move of moves) {
@@ -133,8 +141,6 @@ function getPossibleMoves(state) {
 
     activeBoards.forEach(([boardRow, boardCol]) => {
         const miniBoard = state.board[boardRow][boardCol];
-
-        // Only consider mini-boards that are not won or scratched
         if (!miniBoard.winner && !miniBoard.isScratch) {
             // Only select empty cells
             for (let cellRow = 0; cellRow < 3; cellRow++) {
@@ -149,17 +155,16 @@ function getPossibleMoves(state) {
                     }
                 }
             }
-        } else if(miniBoard.isScratch){
+        } else if (miniBoard.isScratch) {
+            // Allow overriding any piece in scratched mini-boards
             for (let cellRow = 0; cellRow < 3; cellRow++) {
                 for (let cellCol = 0; cellCol < 3; cellCol++) {
-                    if (miniBoard.miniGrid[cellRow][cellCol] == (state.turn != Turns.Player1) ? 'X' : 'O') {
-                        moves.push({
-                            boardRow,
-                            boardCol,
-                            cellRow,
-                            cellCol
-                        });
-                    }
+                    moves.push({
+                        boardRow,
+                        boardCol,
+                        cellRow,
+                        cellCol
+                    });
                 }
             }
         }
@@ -177,12 +182,12 @@ function getActiveBoards(state) {
         const boardCol = lastMove.cellCol;
         const targetBoard = state.board[boardRow][boardCol];
 
-        if (targetBoard.winner) {
+        if (targetBoard.winner || targetBoard.isScratch) {
             // Any board that is not won or scratched can be played on
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
                     const board = state.board[i][j];
-                    if (!board.winner) {
+                    if (!board.winner && !board.isScratch) {
                         activeBoards.push([i, j]);
                     }
                 }
@@ -195,7 +200,7 @@ function getActiveBoards(state) {
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
                 const board = state.board[i][j];
-                if (!board.winner) {
+                if (!board.winner && !board.isScratch) {
                     activeBoards.push([i, j]);
                 }
             }
@@ -248,7 +253,6 @@ function checkWholeGameWin_AI(bigBoard) {
 
 function checkWin(board) {
     // Define checkWin to determine if a player has won on the given board
-    // Example implementation:
     const lines = [
         // Rows
         [board[0][0], board[0][1], board[0][2]],
