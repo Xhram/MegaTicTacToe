@@ -9,14 +9,13 @@ let Turns = {
 self.addEventListener('message', function(e) {
     const { state, depth, weights, move } = e.data;
 
-    // Apply the initial move if provided
-    let currentState = state;
-    if (move) {
-        currentState = applyMove(state, move);
-    }
+    // Compute the score for the provided move
+    const childState = applyMove(state, move);
+    const score = minimax(childState, depth - 1, -Infinity, Infinity, false, weights);
 
-    const root = new TreeNode(currentState);
-    const score = minimax(root, depth, -Infinity, Infinity, true, weights);
-
+    // Post the move and its score back to the main thread
     self.postMessage({ move, score });
+
+    // Terminate the worker to free up resources
+    self.close();
 });

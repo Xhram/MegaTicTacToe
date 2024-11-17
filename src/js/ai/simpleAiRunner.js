@@ -2,12 +2,45 @@ const MAX_WORKERS = navigator.hardwareConcurrency || 4;
 const workerPool = [];
 let availableWorkers = [];
 
+// Initialize the worker pool
 for (let i = 0; i < MAX_WORKERS; i++) {
+    createWorker();
+}
+
+function createWorker() {
     const worker = new Worker('src/js/ai/aiWorker.js');
-    workerPool.push(worker);
+    worker.onmessage = handleWorkerMessage;
     availableWorkers.push(worker);
 }
 
+let moveResults = [];
+let totalMoves = 0;
+let resolvePromise;
+
+// Handle messages from workers
+function handleWorkerMessage(e) {
+    const { move, score } = e.data;
+    moveResults.push({ move, score });
+    totalMoves--;
+
+    // Return the worker to the pool
+    availableWorkers.push(this);
+
+    if (totalMoves === 0) {
+        // Find the best move
+        let bestMove = null;
+        let bestScore = -Infinity;
+        moveResults.forEach(result => {
+            if (result.score > bestScore) {
+                bestScore = result.score;
+                bestMove = result.move;
+            }
+        });
+        moveResults = [];
+        resolvePromise(bestMove);
+    }
+}
+// Run AI with optimized RAM usage
 function runAI(depth) {
     const state = gameStateToJSON();
     const weights = {
@@ -20,44 +53,54 @@ function runAI(depth) {
     };
 
     const possibleMoves = getPossibleMoves(state);
-    let bestMove = null;
-    let bestScore = -Infinity;
-    let completed = 0;
+    if (possibleMoves.length === 0) {
+        return;
+    }
+
+    totalMoves = possibleMoves.length;
+    moveResults = [];
 
     return new Promise((resolve) => {
+        resolvePromise = resolve;
         possibleMoves.forEach((move) => {
-            if (availableWorkers.length === 0) {
-                // Wait for an available worker
-                const interval = setInterval(() => {
-                    if (availableWorkers.length > 0) {
-                        clearInterval(interval);
-                        assignMoveToWorker(move);
-                    }
-                }, 10);
+            if (availableWorkers.length > 0) {
+                const worker = availableWorkers.pop();
+                worker.postMessage({ state, depth, weights, move });
             } else {
-                assignMoveToWorker(move);
+                const tempWorker = new Worker('src/js/ai/aiWorker.js');
+                tempWorker.onmessage = function(e) {
+                    const { move, score } = e.data;
+                    moveResults.push({ move, score });
+                    totalMoves--;
+
+                    tempWorker.terminate();
+
+                    if (totalMoves === 0) {
+                        finalizeBestMove(resolve);
+                    }
+                };
+                tempWorker.postMessage({ state, depth, weights, move });
             }
         });
-
-        function assignMoveToWorker(move) {
-            const worker = availableWorkers.pop();
-            worker.onmessage = function(e) {
-                const { move: returnedMove, score } = e.data;
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = returnedMove;
-                }
-                availableWorkers.push(worker);
-                completed++;
-                if (completed === possibleMoves.length) {
-                    resolve(bestMove);
-                }
-            };
-            worker.postMessage({ state, depth, weights, move });
-        }
     }).then((bestMove) => {
-        applyBestMove(bestMove);
+        if (bestMove) {
+            applyBestMove(bestMove);
+        }
     });
+}
+
+function finalizeBestMove(resolve) {
+    // Find the best move
+    let bestMove = null;
+    let bestScore = -Infinity;
+    moveResults.forEach(result => {
+        if (result.score > bestScore) {
+            bestScore = result.score;
+            bestMove = result.move;
+        }
+    });
+    moveResults = [];
+    resolve(bestMove);
 }
 
 
