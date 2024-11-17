@@ -5,8 +5,8 @@ let Turns = {
     Player2: 2,
 }
 let turn = Turns.Player1;
-let dep = 9;
-let isAutoPlay = turn;
+let dep = 7;
+let isAutoPlay = false;
 
 
 // switchToGame()
@@ -34,16 +34,21 @@ function clickedCell(board, cell){
     console.log(`Clicked on board ${board} and cell ${cell}`);
     removeMarkedLastHighLight();
     removeActive();
+    console.log(document)
     if(turn == Turns.Player1){
         document.querySelector(`#cell${board}-${cell}`).classList.add("marked", "markX");
         document.querySelector(`#cell${board}-${cell}`).innerHTML = "X";
         turn = Turns.Player2;
+        if(window.move){
+            window.move(Math.floor((board - 1)/3),(board - 1)%3,Math.floor((cell-1)/3),(cell-1)%3)
+        }
     } else if(turn == Turns.Player2){
         document.querySelector(`#cell${board}-${cell}`).classList.add("marked", "markO");
         document.querySelector(`#cell${board}-${cell}`).innerHTML = "O";
         turn = Turns.Player1;
         if(isAutoPlay){
             setTimeout(()=>{console.log("AI move"),runAI(dep)},50)
+
         }
 
     }

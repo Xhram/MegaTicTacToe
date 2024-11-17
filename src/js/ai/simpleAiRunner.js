@@ -74,7 +74,7 @@ function assignNextMove() {
 
     const worker = availableWorkers.pop();
     const move = moveQueue.shift();
-    worker.postMessage({ state: gameStateToJSON(), depth: window.searchDepth, weights: weights, move });
+    worker.postMessage({ state: gameStateToJSON(), depth: window.searchDepth, move });
 }
 
 function finalizeBestMove(resolve) {
@@ -82,6 +82,7 @@ function finalizeBestMove(resolve) {
     let bestMove = null;
     let bestScore = -Infinity;
     window.out_moveResults = [...moveResults]
+    console.log(window.out_moveResults)
     moveResults.forEach(result => {
         if (result.score > bestScore) {
             bestScore = result.score;

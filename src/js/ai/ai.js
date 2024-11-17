@@ -1,8 +1,8 @@
 let weights = {
     win: 1000,
-    lose: -2000,
+    lose: -20000,
     miniBoardWin: 100,
-    miniBoardLose: -200,
+    miniBoardLose: -2000,
     winCenterMiniBoard: 100,
     loseCenterMiniBoard: -600,
 };
@@ -10,47 +10,78 @@ let totalChecked = 0;
 let wins = 0;
 
 
-function minimax(state, depth, alpha, beta, maximizingPlayer, weights) {
+
+function findBestMoveBasedOnAverageScore(state, depth) {
+    if(depth === 0 || isTerminal(state)) {
+        totalChecked++;
+        return evaluate(state);
+    }
+
+
+
+    const moves = getPossibleMoves(state);
+    let sum = 0;
+
+    for (const move of moves) {
+        const childState = applyMove(state, move);
+        if(isTerminal(childState)){
+            sum += evaluate(childState);
+        } else {
+
+            sum += findBestMoveBasedOnAverageScore(childState, depth - 1);
+        }
+    }
+
+    return sum;
+}
+
+function minimax(state, depth, alpha, beta, isMaximizingPlayer) {
     if (depth === 0 || isTerminal(state)) {
         totalChecked++;
-        let eval = evaluate(state, weights);
-        if(eval > 0 ){
-            wins++;
-        }
-        return eval;
+        return evaluate(state);
     }
 
     const moves = getPossibleMoves(state);
+    moves.map(move => { return { move, score: evaluateMove(move, state) }; });
+    moves.sort((a, b) => {
+        return b.score - a.score;
+    });
+    moves.map(move => move.move);
 
-    if (maximizingPlayer) {
-        let avg = 0;
-
+    if (isMaximizingPlayer) {
+        let maxEval = -Infinity;
+        
         for (const move of moves) {
             const childState = applyMove(state, move);
-            const eval = minimax(childState, depth - 1, alpha, beta, false, weights);
-            avg += eval;
+            const eval = minimax(childState, depth - 1, alpha, beta, false);
+            maxEval = Math.max(maxEval, eval);
             alpha = Math.max(alpha, eval);
-            // if (beta <= alpha) {
-            //     break; // Beta cut-off
-            // }
+            if (beta <= alpha) {
+                break; // Beta cutoff
+            }
         }
-        return avg / moves.length;
+        return maxEval;
     } else {
         let minEval = Infinity;
         for (const move of moves) {
             const childState = applyMove(state, move);
-            const eval = minimax(childState, depth - 1, alpha, beta, true, weights);
+            const eval = minimax(childState, depth - 1, alpha, beta, true);
             minEval = Math.min(minEval, eval);
             beta = Math.min(beta, eval);
             if (beta <= alpha) {
-                break; // Alpha cut-off
+                break; // Alpha cutoff
             }
         }
         return minEval;
     }
 }
 
-function evaluate(state, weights) {
+function evaluateMove(move, state) {
+    const newState = applyMove(state, move);
+    return evaluate(newState);
+}
+
+function evaluate(state) {
     const player = state.turn === Turns.Player1 ? 'X' : 'O';
     const opponent = player === 'X' ? 'O' : 'X';
     let score = 0;

@@ -7,12 +7,14 @@ let Turns = {
 };
 
 self.addEventListener('message', function(e) {
-    const { state, depth, weights, move } = e.data;
+    const { state, depth, move } = e.data;
 
     // Compute the score for the provided move
     const childState = applyMove(state, move);
 
-    const score = minimax(childState, depth - 1, -Infinity, Infinity, false, weights);
+    //const score = minimax(childState, depth - 1,  -Infinity, evaluate(state) + 2000, true);
+
+    const score = findBestMoveBasedOnAverageScore(childState, depth - 1) / totalChecked;
 
     // Post the move and its score back to the main thread
 
