@@ -5,7 +5,8 @@ let Turns = {
     Player2: 2,
 }
 let turn = Turns.Player1;
-
+let dep = 9;
+let isAutoPlay = true;
 
 
 // switchToGame()
@@ -41,6 +42,10 @@ function clickedCell(board, cell){
         document.querySelector(`#cell${board}-${cell}`).classList.add("marked", "markO");
         document.querySelector(`#cell${board}-${cell}`).innerHTML = "O";
         turn = Turns.Player1;
+        // if(isAutoPlay){
+        //     setTimeout(()=>{console.log("AI move"),runAI(dep)},100)
+        // }
+
     }
     let boardData = [];
     for(let i = 0; i < 3; i++){

@@ -1,161 +1,144 @@
 let weights = {
     win: 25,
-    lose: -25,
-    minBoardWin: 7,
-    minBoardLose: -7,
+    lose: -500,
+    miniBoardWin: 5,
+    miniBoardLose: -20,
+    winCenterMiniBoard: 10,
+    loseCenterMiniBoard: -50,
 
 }
 
 
-function findBestMoves(gameState, depth) {
-    const player = gameState.turn === Turns.Player1 ? 'X' : 'O';
-    const opponent = player === 'X' ? 'O' : 'X';
-
-    let bestValue = -Infinity;
-    let bestMoves = [];
-
-    const possibleMoves = getPossibleMoves(gameState);
-    const numWorkers = navigator.hardwareConcurrency || 4; // Use the number of logical processors or default to 4
-    const workers = [];
-    let completed = 0;
-
-    return new Promise((resolve) => {
-        possibleMoves.forEach((move, index) => {
-            const worker = new Worker('src/js/ai/aiWorker.js');
-            workers.push(worker);
-
-            worker.onmessage = function(event) {
-                const { move, moveValue } = event.data;
-                if (moveValue > bestValue) {
-                    bestValue = moveValue;
-                    bestMoves = [move];
-                } else if (moveValue === bestValue) {
-                    bestMoves.push(move);
-                }
-
-                completed++;
-                if (completed === possibleMoves.length) {
-                    workers.forEach(worker => worker.terminate());
-                    resolve(bestMoves);
-                }
-            };
-
-            worker.postMessage({ gameState: cloneGameState(gameState), move, depth, player, opponent });
-        });
-    });
+class TreeNode {
+    constructor(state, move = null, parent = null) {
+        this.state = state;
+        this.move = move;
+        this.parent = parent;
+        this.children = [];
+        this.score = null;
+    }
 }
 
-function minimax(gameState, depth, isMaximizing, alpha, beta, player, opponent) {
-    const winner = checkWholeGameWin_AI(gameState.board);
-    if (depth === 0 || winner) {
-        return evaluate(gameState, winner, player, opponent);
+
+function minimax(node, depth, alpha, beta, maximizingPlayer, weights) {
+    if (depth === 0 || isTerminal(node.state)) {
+        return evaluate(node.state, weights);
     }
 
-    const possibleMoves = getPossibleMoves(gameState);
-
-    if (isMaximizing) {
+    const moves = getPossibleMoves(node.state);
+    if (maximizingPlayer) {
         let maxEval = -Infinity;
-        for (const move of possibleMoves) {
-            makeMove(gameState, move, player);
-            const eval = minimax(gameState, depth - 1, false, alpha, beta, player, opponent);
-            undoMove(gameState, move);
+        for (const move of moves) {
+            const childState = applyMove(node.state, move);
+            const childNode = new TreeNode(childState, move, node);
+            node.children.push(childNode);
+            const eval = minimax(childNode, depth - 1, alpha, beta, false, weights);
             maxEval = Math.max(maxEval, eval);
             alpha = Math.max(alpha, eval);
-            if (beta <= alpha) break;
+            if (beta <= alpha) {
+                break; // Beta cut-off
+            }
         }
+        node.score = maxEval;
         return maxEval;
     } else {
         let minEval = Infinity;
-        for (const move of possibleMoves) {
-            makeMove(gameState, move, opponent);
-            const eval = minimax(gameState, depth - 1, true, alpha, beta, player, opponent);
-            undoMove(gameState, move);
+        for (const move of moves) {
+            const childState = applyMove(node.state, move);
+            const childNode = new TreeNode(childState, move, node);
+            node.children.push(childNode);
+            const eval = minimax(childNode, depth - 1, alpha, beta, true, weights);
             minEval = Math.min(minEval, eval);
             beta = Math.min(beta, eval);
-            if (beta <= alpha) break;
+            if (beta <= alpha) {
+                break; // Alpha cut-off
+            }
         }
+        node.score = minEval;
         return minEval;
     }
 }
 
-function evaluate(gameState, winner, player, opponent) {
-    if (winner === player) {
+function evaluate(state, weights) {
+    const player = state.turn === Turns.Player1 ? 'X' : 'O';
+    const opponent = player === 'X' ? 'O' : 'X';
+    let score = 0;
+
+    const overallWinner = checkWholeGameWin_AI(state.board);
+    if (overallWinner === player) {
         return weights.win;
-    } else if (winner === opponent) {
+    } else if (overallWinner === opponent) {
         return weights.lose;
-    } else {
-        let score = 0;
-        // Evaluate mini boards
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                const miniBoardObj = gameState.board[i][j];
-                const miniBoard = miniBoardObj.miniGrid;
-                const miniWinner = miniBoardObj.winner;
+    }
+
+    // Evaluate each mini-board
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const miniBoardObj = state.board[i][j];
+            const miniBoard = miniBoardObj.miniGrid;
+            const miniWinner = checkWin(miniBoard);
+
+            if (miniWinner === player) {
+                score += weights.miniBoardWin;
+            } else if (miniWinner === opponent) {
+                score += weights.miniBoardLose;
+            }
+
+            if (i === 1 && j === 1) {
+                // Center mini-board bonus
                 if (miniWinner === player) {
-                    score += weights.minBoardWin;
+                    score += weights.winCenterMiniBoard;
                 } else if (miniWinner === opponent) {
-                    score += weights.minBoardLose;
-                } else if (miniBoardObj.isScratch) {
-                    // Additional logic if needed
-                } else {
-                    // Evaluate intermediate positions
-                    score += evaluateMiniBoard(miniBoard, player, opponent);
+                    score += weights.loseCenterMiniBoard;
                 }
             }
         }
-        return score;
     }
-}
 
-function evaluateMiniBoard(miniBoard, player, opponent) {
-    let score = 0;
-    const lines = [
-        // Rows
-        [[0,0], [0,1], [0,2]],
-        [[1,0], [1,1], [1,2]],
-        [[2,0], [2,1], [2,2]],
-        // Columns
-        [[0,0], [1,0], [2,0]],
-        [[0,1], [1,1], [2,1]],
-        [[0,2], [1,2], [2,2]],
-        // Diagonals
-        [[0,0], [1,1], [2,2]],
-        [[0,2], [1,1], [2,0]],
-    ];
-
-    for (const line of lines) {
-        let playerCount = 0;
-        let opponentCount = 0;
-        for (const [x, y] of line) {
-            const cell = miniBoard[x][y];
-            if (cell === player) {
-                playerCount++;
-            } else if (cell === opponent) {
-                opponentCount++;
-            }
-        }
-        if (playerCount > 0 && opponentCount === 0) {
-            score += Math.pow(10, playerCount);
-        } else if (opponentCount > 0 && playerCount === 0) {
-            score -= Math.pow(10, opponentCount);
-        }
-    }
     return score;
 }
 
-function getPossibleMoves(gameState) {
+function isTerminal(state) {
+    return checkWholeGameWin_AI(state.board) !== null || getPossibleMoves(state).length === 0;
+}
+
+function applyMove(state, move) {
+    const newState = JSON.parse(JSON.stringify(state));
+    const playerSymbol = state.turn === Turns.Player1 ? 'X' : 'O';
+
+    // Update mini-board
+    const miniBoard = newState.board[move.boardRow][move.boardCol].miniGrid;
+    miniBoard[move.cellRow][move.cellCol] = playerSymbol;
+
+    // Check for mini-board win
+    if (checkWin(miniBoard) === playerSymbol) {
+        newState.board[move.boardRow][move.boardCol].winner = playerSymbol;
+    }
+
+    // Update last played cell
+    newState.lastPlayedCell = {
+        boardRow: move.boardRow,
+        boardCol: move.boardCol,
+        cellRow: move.cellRow,
+        cellCol: move.cellCol
+    };
+
+    // Switch turn
+    newState.turn = state.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
+
+    return newState;
+}
+
+function getPossibleMoves(state) {
     const moves = [];
-    const activeBoards = getActiveBoards(gameState);
-    for (const [boardRow, boardCol] of activeBoards) {
-        const miniBoardObj = gameState.board[boardRow][boardCol];
-        const miniBoard = miniBoardObj.miniGrid;
-        for (let cellRow = 0; cellRow < 3; cellRow++) {
-            for (let cellCol = 0; cellCol < 3; cellCol++) {
-                const cellValue = miniBoard[cellRow][cellCol];
-                if (
-                    !cellValue ||
-                    (miniBoardObj.isScratch && !miniBoardObj.winner)
-                ) {
+    const activeBoards = getActiveBoards(state);
+
+    activeBoards.forEach(([boardRow, boardCol]) => {
+        const miniBoard = state.board[boardRow][boardCol];
+        if (miniBoard.winner || miniBoard.isScratch) {
+            // If the mini-board is won or scratched, you can override any piece
+            for (let cellRow = 0; cellRow < 3; cellRow++) {
+                for (let cellCol = 0; cellCol < 3; cellCol++) {
                     moves.push({
                         boardRow,
                         boardCol,
@@ -164,26 +147,40 @@ function getPossibleMoves(gameState) {
                     });
                 }
             }
+        } else {
+            // Only select empty cells
+            for (let cellRow = 0; cellRow < 3; cellRow++) {
+                for (let cellCol = 0; cellCol < 3; cellCol++) {
+                    if (!miniBoard.miniGrid[cellRow][cellCol]) {
+                        moves.push({
+                            boardRow,
+                            boardCol,
+                            cellRow,
+                            cellCol
+                        });
+                    }
+                }
+            }
         }
-    }
+    });
+
     return moves;
 }
 
-function getActiveBoards(gameState) {
-    const lastMove = gameState.lastPlayedCell;
+function getActiveBoards(state) {
+    const lastMove = state.lastPlayedCell;
     const activeBoards = [];
+
     if (lastMove) {
-        let boardRow = lastMove.cellRow;
-        let boardCol = lastMove.cellCol;
-        const targetBoard = gameState.board[boardRow][boardCol];
+        const boardRow = lastMove.cellRow;
+        const boardCol = lastMove.cellCol;
+        const targetBoard = state.board[boardRow][boardCol];
+
         if (targetBoard.winner || targetBoard.isScratch) {
-            // The target board is won or scratched; any board can be played on
+            // Any board can be played on
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
-                    const board = gameState.board[i][j];
-                    if (!board.winner && !board.isScratch) {
-                        activeBoards.push([i, j]);
-                    }
+                    activeBoards.push([i, j]);
                 }
             }
         } else {
@@ -193,56 +190,16 @@ function getActiveBoards(gameState) {
         // First move; all boards are available
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
-                const board = gameState.board[i][j];
-                if (!(board.winner && !board.isScratch)) {
-                    activeBoards.push([i, j]);
-                }
+                activeBoards.push([i, j]);
             }
         }
     }
+
     return activeBoards;
 }
 
-function makeMove(gameState, move, player) {
-    const board = gameState.board[move.boardRow][move.boardCol];
-    if (board.isScratch && !board.winner) {
-        // Can override any piece
-        board.miniGrid[move.cellRow][move.cellCol] = player;
-    } else {
-        board.miniGrid[move.cellRow][move.cellCol] = player;
-    }
-    // Update winner or isScratch for the mini board
-    const miniWinner = checkWin(board.miniGrid);
-    if (miniWinner !== "") {
-        board.winner = miniWinner;
-    } else if (isMiniBoardFull(board.miniGrid)) {
-        board.isScratch = true;
-    }
-    gameState.lastPlayedCell = {
-        cellRow: move.cellRow,
-        cellCol: move.cellCol
-    };
-    gameState.turn = gameState.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
-}
-
-function undoMove(gameState, move) {
-    const board = gameState.board[move.boardRow][move.boardCol];
-    board.miniGrid[move.cellRow][move.cellCol] = null;
-    // Reset winner and isScratch if necessary
-    board.winner = null;
-    board.isScratch = false;
-    gameState.lastPlayedCell = null;
-    gameState.turn = gameState.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
-}
-
-function isMiniBoardFull(miniGrid) {
-    for (let row of miniGrid) {
-        if (row.includes(null)) return false;
-    }
-    return true;
-}
-
 function checkWholeGameWin_AI(bigBoard) {
+    // Create a 3x3 array to represent the overall board status
     const boardData = [];
     for (let i = 0; i < 3; i++) {
         boardData.push([]);
@@ -255,11 +212,14 @@ function checkWholeGameWin_AI(bigBoard) {
             }
         }
     }
+
+    // Check for a winner on the overall board
     const winner = checkWin(boardData);
     if (winner !== "") {
         return winner;
     }
-    // Check for total scratch
+
+    // Check for a total scratch (all mini-boards are won or scratched)
     let xWins = 0;
     let oWins = 0;
     for (let i = 0; i < 3; i++) {
@@ -269,17 +229,12 @@ function checkWholeGameWin_AI(bigBoard) {
             if (cell.winner === 'O') oWins++;
         }
     }
+
+    // If all mini-boards are won or scratched, determine the winner based on the number of wins
     if (xWins + oWins === 9) {
         if (xWins > oWins) return 'X';
         if (oWins > xWins) return 'O';
     }
+
     return null;
-}
-
-// Use the existing checkWin function
-// function checkWin(board) { ... } // Provided in winCheck.js
-
-// Helper function to clone game state (deep clone)
-function cloneGameState(gameState) {
-    return JSON.parse(JSON.stringify(gameState));
 }
