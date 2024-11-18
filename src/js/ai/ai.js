@@ -1,170 +1,197 @@
-let weights = {
-    win: 1000,
-    lose: -20000,
-    miniBoardWin: 100,
-    miniBoardLose: -2000,
-    winCenterMiniBoard: 100,
-    loseCenterMiniBoard: -600,
-};
-let totalChecked = 0;
-let wins = 0;
+
+
+class TreeNode {
+    children;
+    parent;
+    state;
+    move;
+    posibleMovesNotSimulated;
+    isTerminal;
+    isLeafNode;
+    totalPlayouts;
+    totalWins;
 
 
 
-function findBestMoveBasedOnAverageScore(state, depth) {
-    if(depth === 0 || isTerminal(state)) {
-        totalChecked++;
-        return evaluate(state);
-    }
-
-
-
-    const moves = getPossibleMoves(state);
-    let sum = 0;
-
-    for (const move of moves) {
-        const childState = applyMove(state, move);
-        if(isTerminal(childState)){
-            sum += evaluate(childState);
+    constructor(...args){ 
+        if(args.length == 1){
+            let json = args[0];
+            this.parent = json.parent;
+            this.state = json.state;
+            this.move = json.move;
+            this.posibleMovesNotSimulated = json.posibleMovesNotSimulated;
+            this.isTerminal = json.isTerminal;
+            this.isLeafNode = json.isLeafNode;
+            this.totalPlayouts = json.totalPlayouts;
+            this.totalWins = json.totalWins;
+            this.children = [];
+            if(json.children.length){
+                for(let i = 0; i < json.children.length; i++){
+                    this.children.push(new TreeNode(json.children[i]));
+                }
+            }
         } else {
+            let state = args[0];
+            let parent = args[1];
+            let move = args[2];
+            let shouldCloneState = args[3] || false;
+            this.isLeafNode = true;
+            this.totalPlayouts = 0;
+            this.totalWins = 0;
+            this.children = [];
+            this.parent = parent;
+            this.move = move;
+            if(move != undefined){
+                if(shouldCloneState){
+                    this.state = applyMoveClone(state,move); 
 
-            sum += findBestMoveBasedOnAverageScore(childState, depth - 1);
+                } else {
+                    this.state = applyMove(state,move);
+                }
+            } else {
+                if(shouldCloneState){
+                    this.state = structuredClone(state);
+
+                } else {
+                    this.state = state;
+                }
+            }
+            this.isTerminal = checkWholeGameWin_AI(this.state.board) != "";
+            if(!this.isTerminal){
+                this.posibleMovesNotSimulated = getPossibleMoves(this.state);
+            } else {
+                this.posibleMovesNotSimulated = [];
+            }
         }
     }
-
-    return sum;
-}
-
-function minimax(state, depth, alpha, beta, isMaximizingPlayer) {
-    if (depth === 0 || isTerminal(state)) {
-        totalChecked++;
-        return evaluate(state);
-    }
-
-    const moves = getPossibleMoves(state);
-    moves.map(move => { return { move, score: evaluateMove(move, state) }; });
-    moves.sort((a, b) => {
-        return b.score - a.score;
-    });
-    moves.map(move => move.move);
-
-    if (isMaximizingPlayer) {
-        let maxEval = -Infinity;
+    
+    runMonteCarloTreeSearch(){
         
-        for (const move of moves) {
-            const childState = applyMove(state, move);
-            const eval = minimax(childState, depth - 1, alpha, beta, false);
-            maxEval = Math.max(maxEval, eval);
-            alpha = Math.max(alpha, eval);
-            if (beta <= alpha) {
-                break; // Beta cutoff
-            }
+
+        //Selection
+        let selectedNode = this;
+        while(!selectedNode.isLeafNode){
+            selectedNode = selectedNode.selectBestChild();
         }
-        return maxEval;
-    } else {
-        let minEval = Infinity;
-        for (const move of moves) {
-            const childState = applyMove(state, move);
-            const eval = minimax(childState, depth - 1, alpha, beta, true);
-            minEval = Math.min(minEval, eval);
-            beta = Math.min(beta, eval);
-            if (beta <= alpha) {
-                break; // Alpha cutoff
-            }
+
+
+        //Expansion
+        if(selectedNode.totalPlayouts > 0 && selectedNode.isTerminal == false){
+            let nextSelectedNode = selectedNode.expandAllMoves(true)[0];
+            selectedNode.state = undefined;
+            selectedNode = nextSelectedNode;
+
         }
-        return minEval;
-    }
-}
+        
 
-function evaluateMove(move, state) {
-    const newState = applyMove(state, move);
-    return evaluate(newState);
-}
 
-function evaluate(state) {
-    const player = state.turn === Turns.Player1 ? 'X' : 'O';
-    const opponent = player === 'X' ? 'O' : 'X';
-    let score = 0;
+        //Simulation / Rollout
 
-    const overallWinner = checkWholeGameWin_AI(state.board);
-    if (overallWinner === player) {
-        return weights.win;
-    } else if (overallWinner === opponent) {
-        return weights.lose;
-    }
 
-    // Evaluate each mini-board
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            const miniBoardObj = state.board[i][j];
-            const miniBoard = miniBoardObj.miniGrid;
-            const miniWinner = checkWin(miniBoard);
+        let currentState = structuredClone(selectedNode.state);
+        let winner = checkWholeGameWin_AI(currentState.board);
+        let isTerminal = winner != "";
 
-            if (miniWinner === player) {
-                score += weights.miniBoardWin;
-            } else if (miniWinner === opponent) {
-                score += weights.miniBoardLose;
+        //Clear that state to save memory because this is an end game
+        if(isTerminal){
+            selectedNode.state = undefined;
+        }
+
+
+        while(!isTerminal){
+            let moves = getPossibleMoves(currentState);
+            if(moves.length == 0){
+                console.log("No moves left");
+                console.log(currentState);
+                console.log(JSON.stringify(currentState));
             }
+            currentState = applyMove(currentState,selectRandomItemFromArray(moves));
+            winner = checkWholeGameWin_AI(currentState.board);
+            isTerminal = winner != "";
+        }
 
-            if (i === 1 && j === 1) {
-                // Center mini-board bonus
-                if (miniWinner === player) {
-                    score += weights.winCenterMiniBoard;
-                } else if (miniWinner === opponent) {
-                    score += weights.loseCenterMiniBoard;
-                }
+        //Backpropagation
+        let didAIWin = winner == "O";
+        while(selectedNode != null){
+            selectedNode.totalPlayouts++;
+            if(didAIWin){
+                selectedNode.totalWins++;
             }
+            selectedNode = selectedNode.parent;
         }
     }
-
-    return score;
-}
-
-function isTerminal(state) {
-    return checkWholeGameWin_AI(state.board) !== null || getPossibleMoves(state).length === 0;
-}
-
-function applyMove(state, move) {
-    const newState = structuredClone(state);
-    const playerSymbol = state.turn === Turns.Player1 ? 'X' : 'O';
-
-    // Update mini-board
-    const miniBoard = newState.board[move.boardRow][move.boardCol];
-    miniBoard.miniGrid[move.cellRow][move.cellCol] = playerSymbol;
-
-    // Check for mini-board win
-    if (checkWin(miniBoard.miniGrid) === playerSymbol) {
-        miniBoard.winner = playerSymbol;
-    } else {
-        // Check for scratch (draw) in mini-board
-        let isFull = true;
-        for (let i = 0; i < 3; i++) {
-            for (let j = 0; j < 3; j++) {
-                if (!miniBoard.miniGrid[i][j]) {
-                    isFull = false;
-                    break;
-                }
-            }
-            if (!isFull) break;
-        }
-        if (isFull) {
-            miniBoard.isScratch = true;
-        }
+    selectBestChild(){
+        return this.children.reduce((a,b)=>a.getUCTValue() > b.getUCTValue() ? a : b);
     }
 
-    // Update last played cell
-    newState.lastPlayedCell = {
-        boardRow: move.boardRow,
-        boardCol: move.boardCol,
-        cellRow: move.cellRow,
-        cellCol: move.cellCol
-    };
+    getUCTValue(explorationParameter = 1.4142){
+        if(this.totalPlayouts == 0){
+            return Infinity;
+        }
+        if (this.parent == null) {
+			return this.totalWins / this.totalPlayouts;
+		}
+        return this.totalWins/this.totalPlayouts + explorationParameter * Math.sqrt(Math.log(this.parent.totalPlayouts)/this.totalPlayouts);
+    }
 
-    // Switch turn
-    newState.turn = state.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
+    selectRandomMove(){
+        let randomChildIndex = Math.floor(Math.random() * this.children.length);
+        return this.children[randomChildIndex];
+    }
+    expandAllMoves(noCloneOnFirstMove = false){
+        let newNodes = [];
+        while(this.posibleMovesNotSimulated.length > 0){
+            if(newNodes.length == 0 && noCloneOnFirstMove){
+                newNodes.push(this.expandMovePop(false));
+            } else {
+                newNodes.push(this.expandMovePop(true));
+            }
+        }
+        return newNodes;
+    }
+    expandMovePop(shouldCloneState){
+        let move = this.posibleMovesNotSimulated.pop();
+        let newTreeNode = new TreeNode(this.state,this,move,shouldCloneState);
+        this.children.push(newTreeNode);
+        this.isLeafNode = false;
+        return newTreeNode;
+    }
 
-    return newState;
+    expandNNumberOfRandomMoves(n){
+        let numberOfNewNodes = Math.min(n,this.posibleMovesNotSimulated.length);
+        let newNodes = [];
+        for(let i = 0; i < numberOfNewNodes; i++){
+            newNodes.push(this.expandRandomMove());
+        }
+        return newNodes;
+    }
+
+    expandRandomMove(){
+        let randomMoveIndex = Math.floor(Math.random() * this.posibleMovesNotSimulated.length);
+        let newTreeNode = new TreeNode(this.state,this,this.posibleMovesNotSimulated[randomMoveIndex]);
+        this.children.push(newTreeNode);
+        this.posibleMovesNotSimulated.splice(randomMoveIndex,1);
+        this.isLeafNode = false;
+        return newTreeNode;
+    }
+
+    getChildWithBestWinRate(){
+        return this.children.reduce((a,b)=>a.getWinRate() > b.getWinRate() ? a : b);
+    }
+    getChildWithMostSims(){
+        return this.children.reduce((a,b)=>a.totalPlayouts > b.totalPlayouts ? a : b);
+    }
+
+    getWinRate(){
+        if(this.totalPlayouts == 0){return 0;}
+        return this.totalWins/this.totalPlayouts;
+    }
+    
 }
+function selectRandomItemFromArray(array){
+    return array[Math.floor(Math.random() * array.length)];
+}
+
 
 function getPossibleMoves(state) {
     const moves = [];
@@ -172,7 +199,19 @@ function getPossibleMoves(state) {
 
     activeBoards.forEach(([boardRow, boardCol]) => {
         const miniBoard = state.board[boardRow][boardCol];
-        if (!miniBoard.winner && !miniBoard.isScratch) {
+        if (miniBoard.isScratch) {
+            // If the mini-board is  scratched, you can override any piece
+            for (let cellRow = 0; cellRow < 3; cellRow++) {
+                for (let cellCol = 0; cellCol < 3; cellCol++) {
+                    moves.push({
+                        boardRow,
+                        boardCol,
+                        cellRow,
+                        cellCol
+                    });
+                }
+            }
+        } else {
             // Only select empty cells
             for (let cellRow = 0; cellRow < 3; cellRow++) {
                 for (let cellCol = 0; cellCol < 3; cellCol++) {
@@ -184,18 +223,6 @@ function getPossibleMoves(state) {
                             cellCol
                         });
                     }
-                }
-            }
-        } else if (miniBoard.isScratch) {
-            // Allow overriding any piece in scratched mini-boards
-            for (let cellRow = 0; cellRow < 3; cellRow++) {
-                for (let cellCol = 0; cellCol < 3; cellCol++) {
-                    moves.push({
-                        boardRow,
-                        boardCol,
-                        cellRow,
-                        cellCol
-                    });
                 }
             }
         }
@@ -213,27 +240,21 @@ function getActiveBoards(state) {
         const boardCol = lastMove.cellCol;
         const targetBoard = state.board[boardRow][boardCol];
 
-        if (targetBoard.winner || targetBoard.isScratch) {
-            // Any board that is not won or scratched can be played on
+        if (targetBoard.winner) {
+            // Any board can be played on
             for (let i = 0; i < 3; i++) {
                 for (let j = 0; j < 3; j++) {
-                    const board = state.board[i][j];
-                    if (!board.winner && !board.isScratch) {
-                        activeBoards.push([i, j]);
-                    }
+                    activeBoards.push([i, j]);
                 }
             }
         } else {
             activeBoards.push([boardRow, boardCol]);
         }
     } else {
-        // First move; all boards that are not won or scratched are available
+        // First move; all boards are available
         for (let i = 0; i < 3; i++) {
             for (let j = 0; j < 3; j++) {
-                const board = state.board[i][j];
-                if (!board.winner && !board.isScratch) {
-                    activeBoards.push([i, j]);
-                }
+                activeBoards.push([i, j]);
             }
         }
     }
@@ -279,30 +300,125 @@ function checkWholeGameWin_AI(bigBoard) {
         if (oWins > xWins) return 'O';
     }
 
-    return null;
+    return "";
 }
 
-function checkWin(board) {
-    // Define checkWin to determine if a player has won on the given board
-    const lines = [
-        // Rows
-        [board[0][0], board[0][1], board[0][2]],
-        [board[1][0], board[1][1], board[1][2]],
-        [board[2][0], board[2][1], board[2][2]],
-        // Columns
-        [board[0][0], board[1][0], board[2][0]],
-        [board[0][1], board[1][1], board[2][1]],
-        [board[0][2], board[1][2], board[2][2]],
-        // Diagonals
-        [board[0][0], board[1][1], board[2][2]],
-        [board[0][2], board[1][1], board[2][0]],
-    ];
+function applyMoveClone(state, move) {
+    const newState = structuredClone(state);
+    const playerSymbol = state.turn === Turns.Player1 ? 'X' : 'O';
 
-    for (let line of lines) {
-        if (line[0] && line[0] === line[1] && line[1] === line[2]) {
-            return line[0];
-        }
+    // Update mini-board
+    const miniBoard = newState.board[move.boardRow][move.boardCol].miniGrid;
+    miniBoard[move.cellRow][move.cellCol] = playerSymbol;
+
+    // Check for mini-board win
+    if (checkWin(miniBoard) === playerSymbol) {
+        newState.board[move.boardRow][move.boardCol].winner = playerSymbol;
     }
 
-    return "";
+    // Update last played cell
+    newState.lastPlayedCell = {
+        boardRow: move.boardRow,
+        boardCol: move.boardCol,
+        cellRow: move.cellRow,
+        cellCol: move.cellCol
+    };
+
+    // Switch turn
+    newState.turn = state.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
+
+    return newState;
+}
+function applyMove(state, move) {
+    const playerSymbol = state.turn === Turns.Player1 ? 'X' : 'O';
+
+    // Update mini-board
+    const miniBoard = state.board[move.boardRow][move.boardCol].miniGrid;
+    miniBoard[move.cellRow][move.cellCol] = playerSymbol;
+
+    // Check for mini-board win
+    if (checkWin(miniBoard) === playerSymbol) {
+        state.board[move.boardRow][move.boardCol].winner = playerSymbol;
+    }
+
+    // Update last played cell
+    state.lastPlayedCell = {
+        boardRow: move.boardRow,
+        boardCol: move.boardCol,
+        cellRow: move.cellRow,
+        cellCol: move.cellCol
+    };
+
+    // Switch turn
+    state.turn = state.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
+
+    return state;
+}
+function checkScratch(miniBoard) {
+    // Check if all cells are filled
+    for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 3; col++) {
+            if (!miniBoard[row][col]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function applyMoveClone(state, move) {
+    const newState = structuredClone(state);
+    const playerSymbol = state.turn === Turns.Player1 ? 'X' : 'O';
+
+    // Update mini-board
+    const miniBoard = newState.board[move.boardRow][move.boardCol].miniGrid;
+    miniBoard[move.cellRow][move.cellCol] = playerSymbol;
+
+    // Check for mini-board win
+    if (checkWin(miniBoard) === playerSymbol) {
+        newState.board[move.boardRow][move.boardCol].winner = playerSymbol;
+    } else if (checkScratch(miniBoard)) {
+        newState.board[move.boardRow][move.boardCol].isScratch = true;
+    }
+
+    // Update last played cell
+    newState.lastPlayedCell = {
+        boardRow: move.boardRow,
+        boardCol: move.boardCol,
+        cellRow: move.cellRow,
+        cellCol: move.cellCol
+    };
+
+    // Switch turn
+    newState.turn = state.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
+
+    return newState;
+}
+
+function applyMove(state, move) {
+    const playerSymbol = state.turn === Turns.Player1 ? 'X' : 'O';
+
+    // Update mini-board
+    const miniBoard = state.board[move.boardRow][move.boardCol].miniGrid;
+    miniBoard[move.cellRow][move.cellCol] = playerSymbol;
+
+    // Check for mini-board win
+    if (checkWin(miniBoard) === playerSymbol) {
+        state.board[move.boardRow][move.boardCol].winner = playerSymbol;
+    } else if (checkScratch(miniBoard)) {
+        state.board[move.boardRow][move.boardCol].isScratch = true;
+    }
+
+    // Update last played cell
+    state.lastPlayedCell = {
+        boardRow: move.boardRow,
+        boardCol: move.boardCol,
+        cellRow: move.cellRow,
+        cellCol: move.cellCol
+    };
+
+    // Switch turn
+    state.turn = state.turn === Turns.Player1 ? Turns.Player2 : Turns.Player1;
+
+    return state;
 }

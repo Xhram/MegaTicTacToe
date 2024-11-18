@@ -5,7 +5,7 @@ let Turns = {
     Player2: 2,
 }
 let turn = Turns.Player1;
-let dep = 7;
+let dep = 50000;
 let isAutoPlay = false;
 
 
